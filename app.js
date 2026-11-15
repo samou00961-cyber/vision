@@ -35,7 +35,20 @@ function loginView() {
   $("#tabs").hidden = true;
   $("#view").innerHTML = `<div class="card"><h2>Connexion</h2><p class="muted small">Un lien de connexion est envoyé à ton adresse. Ouvre-le sur cet iPhone (de préférence depuis l'appli installée).</p>
     <label>Adresse e-mail</label><input id="em" type="email" autocomplete="email" inputmode="email" placeholder="ton adresse">
-    <p><button class="primary wide" id="send">Recevoir le lien</button></p><p id="msg" class="small muted"></p></div>`;
+    <p><button class="primary wide" id="send">Recevoir le lien</button></p><p id="msg" class="small muted"></p></div>
+    <div class="card"><h3>Appli installée sur l'écran d'accueil ?</h3><p class="small muted">iOS ouvre le lien du mail dans Safari, pas dans l'appli. Dans le mail, <b>appuie longuement sur le bouton de connexion → Copier le lien</b>, reviens ici et colle-le.</p>
+    <input id="pasted" placeholder="Colle ici le lien copié" autocapitalize="off" autocorrect="off">
+    <p><button class="wide" id="paste">Me connecter avec ce lien</button></p><p id="msg2" class="small muted"></p></div>`;
+  $("#paste").onclick = async () => {
+    try {
+      const u = new URL($("#pasted").value.trim());
+      const token_hash = u.searchParams.get("token"), type = u.searchParams.get("type");
+      if (!token_hash || !type) throw new Error("lien non reconnu");
+      const { error } = await sb.auth.verifyOtp({ token_hash, type });
+      if (error) throw error;
+      location.reload();
+    } catch (e) { $("#msg2").textContent = "Échec : " + (e.message || e) + " (le lien expire vite : redemande-en un)"; }
+  };
   $("#send").onclick = async () => {
     const email = $("#em").value.trim().toLowerCase();
     const { error } = await sb.auth.signInWithOtp({ email, options: { emailRedirectTo: location.origin + location.pathname, shouldCreateUser: true } });
